@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIIA CTMS - Pharmacovigilance & Safety Surveillance</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* SPA View Management */
+        .dashboard-view { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .dashboard-view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Typography standard overrides if needed */
+        h2 { font-size: 20px; margin-bottom: 16px; color: var(--text-main); }
+        
+        /* Chat Split Layout */
+        .chat-split-layout {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 160px); /* Adjust based on header */
+        }
+        .patient-queue {
+            width: 35%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+        .active-chat-pane {
+            width: 65%;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+        }
+        .queue-header { padding: 16px; border-bottom: 1px solid var(--border-subtle); background: #FAFAFA;}
+        .queue-list { overflow-y: auto; flex: 1; }
+        .queue-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .queue-item:hover, .queue-item.active { background: var(--bg-app); }
+        .queue-avatar { width: 40px; height: 40px; background: var(--sidebar-bg); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;}
+        
+        .chat-header { padding: 16px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: #FAFAFA; }
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; background: var(--bg-app); }
+        .chat-input-area { padding: 16px; border-top: 1px solid var(--border-subtle); display: flex; gap: 12px; background: var(--bg-surface); }
+        .chat-input-area input { flex: 1; padding: 10px 16px; border: 1px solid var(--border-subtle); border-radius: 24px; outline: none; font-family: inherit; }
+        .chat-input-area input:focus { border-color: var(--border-focus); }
+        .chat-input-area button { background: var(--primary-accent); color: white; border: none; padding: 10px 24px; border-radius: 24px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;}
+        .chat-input-area button:hover { background: var(--primary-accent-hover); }
+        
+        .msg-bubble { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; position: relative; box-shadow: var(--shadow-sm); }
+        .msg-patient { background: white; border: 1px solid var(--border-subtle); align-self: flex-start; border-bottom-left-radius: 4px; color: var(--text-main); }
+        .msg-officer { background: var(--primary-accent); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        
+        /* Alert Cards */
+        .alert-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-left: 4px solid var(--danger-red);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        .alert-card.amber { border-left-color: var(--warning-amber); }
+        .alert-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .alert-title { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px;}
+        .alert-card.amber .alert-title { color: var(--warning-amber); }
+        .alert-card:not(.amber) .alert-title { color: var(--danger-red); }
+        .alert-details { font-size: 14px; color: var(--text-main); margin-bottom: 16px; line-height: 1.5; }
+        .alert-actions { display: flex; gap: 12px; }
+        
+        /* Filter Pills */
+        .filter-pills { display: flex; gap: 12px; margin-bottom: 20px; }
+        .filter-pill { padding: 6px 16px; background: white; border: 1px solid var(--border-subtle); border-radius: 20px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s; }
+        .filter-pill.active { background: var(--primary-accent); color: white; border-color: var(--primary-accent); }
+        
+        /* Modals */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--bg-surface); width: 100%; max-width: 500px; border-radius: var(--radius-md);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: #FAFAFA; }
+        .modal-header h3 { margin: 0; color: var(--text-main); font-size: 18px; }
+        .close-btn { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 12px; background: #FAFAFA; }
+        
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 13px; color: var(--text-main); }
+        .form-control { width: 100%; padding: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); outline: none; box-sizing: border-box; font-family: inherit;}
+        .form-control:focus { border-color: var(--border-focus); }
+        
+        /* Toasts */
+        .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1100; display: flex; flex-direction: column; gap: 12px; }
+        .toast {
+            background: var(--bg-surface); padding: 16px 20px; border-radius: var(--radius-md);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-left: 4px solid var(--danger-red);
+            display: flex; align-items: center; gap: 12px; transform: translateX(120%); transition: transform 0.3s ease;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-left-color: var(--success-green); }
+        .toast-icon { font-size: 20px; }
+        .toast.success .toast-icon { color: var(--success-green); }
+        .toast:not(.success) .toast-icon { color: var(--danger-red); }
+        .toast-text { font-size: 14px; font-weight: 600; color: var(--text-main); }
+        
+        /* Utility */
+        .status-pill { background: #F1F5F9; color: var(--text-main); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid var(--border-subtle);}
+        .table-action-btn { background: white; border: 1px solid var(--border-subtle); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-main); transition: all 0.2s;}
+        .table-action-btn:hover { border-color: var(--primary-accent); color: var(--primary-accent); }
+        
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; color: white;}
+        .badge.red { background: var(--danger-red); }
+        .badge.amber { background: var(--warning-amber); }
+        .badge.green { background: var(--success-green); }
+        .badge.neutral { background: var(--text-muted); }
+        
+        .nav-badge { background: var(--border-subtle); color: var(--text-main); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-left: auto; }
+        .nav-badge.red { background: var(--danger-red); color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fa-solid fa-leaf"></i>
+            <div>
+                <div class="sidebar-title">AIIA CTMS</div>
+                <div class="sidebar-subtitle">CLINICAL RESEARCH DIVISION</div>
+            </div>
+        </div>
+        <nav class="nav-menu">
+            <a class="nav-item active nav-link" onclick="switchView('view-dashboard', this)">
+                <i class="fa-solid fa-chart-pie"></i> Dashboard
+            </a>
+            <a class="nav-item nav-link" onclick="switchView('view-alerts', this)">
+                <i class="fa-solid fa-bell"></i> Active Alerts
+                <span class="nav-badge red">2</span>
+            </a>
+            <a class="nav-item nav-link" onclick="switchView('view-chats', this)">
+                <i class="fa-solid fa-comments"></i> Patient Chats
+                <span class="nav-badge">5</span>
+            </a>
+            <a class="nav-item nav-link" onclick="switchView('view-reports', this)">
+                <i class="fa-solid fa-chart-line"></i> Trial Reports
+            </a>
+            <a class="nav-item nav-link" onclick="openModal('logout-modal')" style="color: #ef4444; margin-top: auto;">
+                <i class="fa-solid fa-power-off"></i> Logout
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="avatar-container">
+                    <div class="avatar">RK</div>
+                    <div class="status-dot"></div>
+                </div>
+                <div class="user-info">
+                    <h4>Dr. Renu Kulkarni</h4>
+                    <p>Safety Officer (PV)</p>
+                </div>
+            </div>
+            <a href="../index.html" class="switch-role-btn">
+                <i class="fa-solid fa-right-from-bracket"></i> Switch Role / Back to Hub
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <header class="header">
+            <div class="header-title">
+                <h1>Pharmacovigilance & Safety Surveillance</h1>
+                <p>All India Institute of Ayurveda • Real-Time Adverse Event Monitoring</p>
+            </div>
+            <div class="header-controls">
+                <div class="search-bar">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" placeholder="Search safety logs, symptoms, patients...">
+                </div>
+                <div class="notification-bell">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="pulse-dot"></span>
+                </div>
+                <button class="btn-primary" style="background: var(--danger-red);" onclick="openModal('escalation-modal')">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Trigger Doctor Alert
+                </button>
+            </div>
+        </header>
+        
+        <div class="content-area">
+            
+            <!-- VIEW 1: DASHBOARD (Active by default) -->
+            <section id="view-dashboard" class="dashboard-view active">
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header"><h3>Patients Monitored</h3><i class="fa-solid fa-users text-muted"></i></div>
+                        <div class="kpi-value">382</div>
+                        <div class="kpi-subtitle">Across 4 active trials</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><h3>Active High-Risk Flags</h3><i class="fa-solid fa-triangle-exclamation" style="color: var(--danger-red);"></i></div>
+                        <div class="kpi-value" style="color: var(--danger-red);">2 Critical</div>
+                        <div class="kpi-subtitle">Require immediate action</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><h3>Mild Symptoms Logged</h3><i class="fa-solid fa-notes-medical" style="color: var(--warning-amber);"></i></div>
+                        <div class="kpi-value" style="color: var(--warning-amber);">14 Today</div>
+                        <div class="kpi-subtitle">Routine tracking</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><h3>Avg Response Time</h3><i class="fa-solid fa-stopwatch" style="color: var(--success-green);"></i></div>
+                        <div class="kpi-value" style="color: var(--success-green);">4.2 mins</div>
+                        <div class="kpi-subtitle">Target: < 5 mins</div>
+                    </div>
+                </div>
+
+                <!-- Live Feed Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-list-ul"></i>
+                            <h3>Live Feed: Recently Reported Symptoms</h3>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Patient ID</th>
+                                    <th>Trial Name</th>
+                                    <th>Reported Symptom</th>
+                                    <th>Severity</th>
+                                    <th>Reported Time</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>PT-1039</strong></td>
+                                    <td>Ashwagandha Sleep Study</td>
+                                    <td>Shortness of breath, chest tightness</td>
+                                    <td><span class="badge red">Severe</span></td>
+                                    <td class="text-muted">3 mins ago</td>
+                                    <td><button class="table-action-btn" onclick="reviewPatient('PT-1039')">Review & Triage</button></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>PT-1028</strong></td>
+                                    <td>Panchakarma Recovery Trial</td>
+                                    <td>Dizziness on standing</td>
+                                    <td><span class="badge red">Severe</span></td>
+                                    <td class="text-muted">18 mins ago</td>
+                                    <td><button class="table-action-btn" onclick="reviewPatient('PT-1028')">Review & Triage</button></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>PT-1042</strong></td>
+                                    <td>Triphala-Guggulu Metabolic</td>
+                                    <td>Nausea, mild stomach cramps</td>
+                                    <td><span class="badge amber">Mild</span></td>
+                                    <td class="text-muted">35 mins ago</td>
+                                    <td><button class="table-action-btn" onclick="reviewPatient('PT-1042')">Review & Triage</button></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>PT-1051</strong></td>
+                                    <td>Triphala-Guggulu Metabolic</td>
+                                    <td>Mild headache</td>
+                                    <td><span class="badge amber">Mild</span></td>
+                                    <td class="text-muted">1 hr ago</td>
+                                    <td><button class="table-action-btn" onclick="reviewPatient('PT-1051')">Review & Triage</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: ALERTS -->
+            <section id="view-alerts" class="dashboard-view">
+                <div class="filter-pills">
+                    <div class="filter-pill active">All (2)</div>
+                    <div class="filter-pill">Critical Escalations (1)</div>
+                    <div class="filter-pill">Under Review (1)</div>
+                </div>
+                
+                <div class="alert-card">
+                    <div class="alert-header">
+                        <div class="alert-title"><i class="fa-solid fa-triangle-exclamation"></i> CRITICAL FLAG: PT-1039</div>
+                        <span class="status-pill" style="background: var(--danger-bg); color: var(--danger-red);">Unacknowledged by Doctor</span>
+                    </div>
+                    <div class="alert-details">
+                        <p><strong>Symptom:</strong> Acute chest tightness & dyspnea 15 mins post-dose.</p>
+                        <p><strong>Trial:</strong> Ashwagandha Sleep & Stress Study (Batch #ASH-2026-02).</p>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="btn-outline"><i class="fa-solid fa-phone"></i> Call Patient</button>
+                        <button class="btn-primary" style="background: var(--danger-red); border-color: var(--danger-red);" onclick="openModal('escalation-modal')">Escalate to PI Doctor</button>
+                        <button class="btn-outline">Resolve Flag</button>
+                    </div>
+                </div>
+
+                <div class="alert-card amber">
+                    <div class="alert-header">
+                        <div class="alert-title"><i class="fa-solid fa-circle-exclamation"></i> MODERATE FLAG: PT-1028</div>
+                        <span class="status-pill">Under Observation</span>
+                    </div>
+                    <div class="alert-details">
+                        <p><strong>Symptom:</strong> Persistent postural hypotension / dizziness.</p>
+                        <p><strong>Trial:</strong> Panchakarma Recovery Trial.</p>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="btn-outline"><i class="fa-solid fa-notes-medical"></i> Add Clinical Note</button>
+                        <button class="btn-primary">Mark Resolved</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 3: PATIENT CHATS -->
+            <section id="view-chats" class="dashboard-view">
+                <div class="chat-split-layout">
+                    <!-- Patient Queue -->
+                    <div class="patient-queue">
+                        <div class="queue-header">
+                            <input type="text" class="form-control" placeholder="Search patients...">
+                        </div>
+                        <div class="queue-list">
+                            <div class="queue-item active">
+                                <div class="queue-avatar">1039</div>
+                                <div style="flex: 1;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                        <strong style="font-size: 14px;">Arjun Patel (PT-1039)</strong>
+                                        <span style="font-size: 11px; color: var(--text-muted);">Just now</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">
+                                        Hello doctor, about 15 mins after...
+                                    </div>
+                                </div>
+                                <span class="badge red">Severe</span>
+                            </div>
+                            <div class="queue-item">
+                                <div class="queue-avatar" style="background: #64748B;">1028</div>
+                                <div style="flex: 1;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                        <strong style="font-size: 14px;">Meera Reddy (PT-1028)</strong>
+                                        <span style="font-size: 11px; color: var(--text-muted);">18m ago</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-muted);">I felt dizzy when standing...</div>
+                                </div>
+                                <span class="badge red">Severe</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Chat Pane -->
+                    <div class="active-chat-pane">
+                        <div class="chat-header">
+                            <div>
+                                <h3 style="margin: 0; font-size: 16px; color: var(--text-main);">Arjun Patel <span style="color: var(--text-muted); font-weight: 400;">(PT-1039)</span></h3>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                                    Ashwagandha Sleep Study (Batch #ASH-2026-02) • Prakriti: Vata-Pitta
+                                </div>
+                            </div>
+                            <button class="btn-primary" style="background: var(--danger-red); border: none;" onclick="openModal('escalation-modal')">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Escalate to Head Doctor
+                            </button>
+                        </div>
+                        
+                        <div class="chat-messages" id="chat-messages-container">
+                            <div class="msg-bubble msg-patient">
+                                <div style="font-weight: 600; margin-bottom: 4px; font-size: 12px;">PT-1039 • 09:14 AM</div>
+                                Hello doctor, about 15 mins after taking the morning churnam, I started feeling severe dizziness and tight breathing.
+                            </div>
+                            <div class="msg-bubble msg-officer">
+                                <div style="font-weight: 600; margin-bottom: 4px; font-size: 12px;">Dr. Renu (Safety) • 09:15 AM</div>
+                                Please sit down immediately in a cool area and sip warm water. Do not take the next dose. We are escalating this to Dr. Sharma right now.
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input" placeholder="Type a message to the patient..." onkeypress="handleChatKey(event)">
+                            <button onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i> Send</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 4: REPORTS -->
+            <section id="view-reports" class="dashboard-view">
+                <h2>Safety Analytics & Severity Breakdown</h2>
+                
+                <div class="kpi-grid" style="margin-bottom: 24px;">
+                    <div class="kpi-card" style="border-top: 4px solid #3B82F6;">
+                        <div class="kpi-header"><h3>Gastrointestinal</h3></div>
+                        <div class="kpi-value">45%</div>
+                        <div class="kpi-subtitle">Most common (Nausea, Acidity)</div>
+                    </div>
+                    <div class="kpi-card" style="border-top: 4px solid #8B5CF6;">
+                        <div class="kpi-header"><h3>Neurological</h3></div>
+                        <div class="kpi-value">22%</div>
+                        <div class="kpi-subtitle">Headache, Dizziness</div>
+                    </div>
+                    <div class="kpi-card" style="border-top: 4px solid #F59E0B;">
+                        <div class="kpi-header"><h3>Dermatological</h3></div>
+                        <div class="kpi-value">15%</div>
+                        <div class="kpi-subtitle">Rashes, Itching</div>
+                    </div>
+                    <div class="kpi-card" style="border-top: 4px solid var(--danger-red);">
+                        <div class="kpi-header"><h3>Cardiovascular</h3></div>
+                        <div class="kpi-value">18%</div>
+                        <div class="kpi-subtitle">Palpitations, BP changes</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-table"></i>
+                            <h3>Trial-by-Trial Safety Breakdown</h3>
+                        </div>
+                        <button class="btn-outline"><i class="fa-solid fa-download"></i> Download GCP Safety Summary (PDF)</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Trial Name</th>
+                                    <th>Total Enrolled</th>
+                                    <th>Mild Events</th>
+                                    <th>Severe (SAEs)</th>
+                                    <th>CTRI Compliance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Ashwagandha Sleep Study</strong></td>
+                                    <td>120</td>
+                                    <td><span class="badge amber">8</span></td>
+                                    <td><span class="badge red">1</span></td>
+                                    <td><span class="status-pill" style="color: var(--success-green); border-color: var(--success-green); background: var(--success-bg);">Compliant</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Panchakarma Recovery Trial</strong></td>
+                                    <td>85</td>
+                                    <td><span class="badge amber">12</span></td>
+                                    <td><span class="badge red">2</span></td>
+                                    <td><span class="status-pill" style="color: var(--success-green); border-color: var(--success-green); background: var(--success-bg);">Compliant</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Triphala-Guggulu Metabolic</strong></td>
+                                    <td>200</td>
+                                    <td><span class="badge amber">24</span></td>
+                                    <td><span class="badge neutral">0</span></td>
+                                    <td><span class="status-pill" style="color: var(--success-green); border-color: var(--success-green); background: var(--success-bg);">Compliant</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+        </div>
+    </main>
+
+    <!-- MODALS -->
+    
+    <!-- Escalation Modal -->
+    <div id="escalation-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🚨 Trigger Doctor Alert</h3>
+                <button class="close-btn" onclick="closeModal('escalation-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Patient ID</label>
+                    <input type="text" class="form-control" value="PT-1039" readonly style="background: #F1F5F9;">
+                </div>
+                <div class="form-group">
+                    <label>Trial / Study</label>
+                    <input type="text" class="form-control" value="Ashwagandha Sleep Study" readonly style="background: #F1F5F9;">
+                </div>
+                <div class="form-group">
+                    <label>Urgency Level</label>
+                    <select class="form-control">
+                        <option value="critical">Critical (Immediate Response Required)</option>
+                        <option value="moderate">Moderate (Review within 2 hours)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Clinical Observation Notes</label>
+                    <textarea class="form-control" rows="4" placeholder="Detail the symptoms and why this is being escalated..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="closeModal('escalation-modal')">Cancel</button>
+                <button class="btn-primary" style="background: var(--danger-red); border-color: var(--danger-red);" onclick="triggerEscalation()">Transmit Emergency Notification</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Modal -->
+    <div id="logout-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>Confirm Logout</h3>
+                <button class="close-btn" onclick="closeModal('logout-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin: 0; color: var(--text-main); font-size: 14px;">Are you sure you want to log out of the Safety Dashboard?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="closeModal('logout-modal')">Cancel</button>
+                <button class="btn-primary" onclick="window.location.href='../index.html'">Confirm Log Out</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // SPA View Switching
+        function switchView(viewId, navElement) {
+            // Hide all views
+            document.querySelectorAll('.dashboard-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            // Remove active state from all nav links
+            if (navElement) {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+                navElement.classList.add('active');
+            } else {
+                // If called programmatically, try to sync the nav menu
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                    if(link.getAttribute('onclick').includes(viewId)) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+            
+            // Show target view
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        // Triage auto-switch
+        function reviewPatient(patientId) {
+            // Switch to chats view
+            switchView('view-chats');
+            // In a real app, this would also load the specific patient's data into the right pane
+            showToast('Loaded ' + patientId + ' into triage view', 'success');
+        }
+
+        // Modal Logic
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        
+        // Close modal on outside click
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.classList.remove('active');
+            }
+        }
+
+        // Toast Logic
+        function showToast(message, type = 'danger') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? 'fa-circle-check' : 'fa-triangle-exclamation';
+            
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} toast-icon"></i>
+                <div class="toast-text">${message}</div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            // Remove after 4 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function triggerEscalation() {
+            closeModal('escalation-modal');
+            showToast("🚨 Emergency notification dispatched to Dr. Anand Sharma's dashboard");
+            
+            // Increment badge counter
+            const alertBadge = document.querySelector('.nav-badge.red');
+            if (alertBadge) {
+                alertBadge.textContent = parseInt(alertBadge.textContent) + 1;
+            }
+        }
+
+        // Chat Logic
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            const container = document.getElementById('chat-messages-container');
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'msg-bubble msg-officer';
+            bubble.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 4px; font-size: 12px;">Dr. Renu (Safety) • ${timeString}</div>
+                ${message}
+            `;
+            
+            container.appendChild(bubble);
+            input.value = '';
+            
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function handleChatKey(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+    </script>
+</body>
+</html>

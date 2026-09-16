@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PI Dashboard | AIIA CTMS</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="../css/global.css">
+</head>
+
+<body>
+
+    <!-- 1. Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fa-solid fa-leaf"></i>
+            <div>
+                <div class="sidebar-title">AIIA CTMS</div>
+                <div class="sidebar-subtitle">CLINICAL RESEARCH DIVISION</div>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <a class="nav-item active" onclick="switchView('view-overview', this)">
+                <i class="fa-solid fa-chart-pie"></i> Overview
+            </a>
+            <a class="nav-item" onclick="switchView('view-clinical-trials', this)">
+                <i class="fa-solid fa-flask"></i> Clinical Trials
+            </a>
+            <a class="nav-item" onclick="switchView('view-patient-roster', this)">
+                <i class="fa-solid fa-users"></i> Patient Roster
+            </a>
+            <a class="nav-item" onclick="switchView('view-clinical-staff', this)">
+                <i class="fa-solid fa-user-nurse"></i> Clinical Staff
+            </a>
+            <a class="nav-item" onclick="switchView('view-safety-alerts', this)">
+                <i class="fa-solid fa-triangle-exclamation"></i> Safety & Alerts
+                <span class="badge-danger" id="nav-alert-badge">3</span>
+            </a>
+            <a class="nav-item" onclick="switchView('view-audit-trail', this)">
+                <i class="fa-solid fa-clipboard-list"></i> Audit Trail
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="avatar-container">
+                    <div class="avatar">AS</div>
+                    <div class="status-dot"></div>
+                </div>
+                <div class="user-info">
+                    <h4>Dr. Anand Sharma</h4>
+                    <p>Principal Investigator</p>
+                </div>
+            </div>
+            <a href="../index.html" class="switch-role-btn">
+                <i class="fa-solid fa-right-from-bracket"></i> Switch Role / Back to Hub
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content wrapper -->
+    <main class="main-content">
+
+        <!-- 2. Top Header Bar -->
+        <header class="header">
+            <div class="header-title">
+                <h1>Principal Investigator Dashboard</h1>
+                <p>All India Institute of Ayurveda • Clinical Research Division</p>
+            </div>
+            <div class="header-controls">
+                <div class="search-bar">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="trialSearch" placeholder="Search trials or patients...">
+                </div>
+                <div class="notification-bell" title="Notifications">
+                    <i class="fa-regular fa-bell"></i>
+                    <div class="bell-pulse" id="bell-indicator"></div>
+                </div>
+                <button class="btn-primary" id="btn-new-trial">
+                    <i class="fa-solid fa-plus"></i> Create New Trial
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Content Area -->
+        <div class="content-area">
+
+            <!-- VIEW 1: OVERVIEW (Active by default) -->
+            <section id="view-overview" class="dashboard-view active">
+
+                <!-- High-Priority Safety Alert Banner -->
+                <div class="alert-banner" id="pharmacovigilance-alert">
+                    <div class="alert-content">
+                        <i class="fa-solid fa-triangle-exclamation alert-icon"></i>
+                        <div class="alert-text">
+                            <h4>🚨 CRITICAL ADVERSE EVENT (NDCTR-2019 Flag)</h4>
+                            <p>Patient <strong>PT-1042</strong> (AYU-DIAB-001) reported Grade 3 Tachycardia & Dizziness.
+                                Reported by Pharmacovigilance 18 mins ago.</p>
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="btn-alert">Schedule Urgent Review</button>
+                        <button class="btn-alert">Review eCRF</button>
+                        <button class="btn-alert-solid" id="btn-ack-alert">Acknowledge</button>
+                    </div>
+                </div>
+
+                <!-- KPI Stat Summary Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <h3>Active Clinical Trials</h3>
+                            <i class="fa-solid fa-flask" style="color: #4338CA;"></i>
+                        </div>
+                        <div class="kpi-value" id="kpi-trials-count">4 Active</div>
+                        <div class="kpi-subtitle">Phase II: 2, Phase III: 2</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <h3>Enrolled Trial Subjects</h3>
+                            <i class="fa-solid fa-users" style="color: #059669;"></i>
+                        </div>
+                        <div class="kpi-value">382 / 500</div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: 76.4%;"></div>
+                        </div>
+                        <div class="kpi-subtitle" style="margin-top: 8px;">76.4% Recruitment Progress</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <h3>GCP Data Compliance</h3>
+                            <i class="fa-solid fa-shield-halved" style="color: #2563EB;"></i>
+                        </div>
+                        <div class="kpi-value">98.4%</div>
+                        <div class="kpi-subtitle">All eCRFs signed & validated on time</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <h3>Pending Adverse Events</h3>
+                            <i class="fa-solid fa-heart-pulse" style="color: #EF4444;"></i>
+                        </div>
+                        <div class="kpi-value" id="kpi-flags-count">2 Open Flags</div>
+                        <div class="kpi-subtitle">1 Critical, 1 Moderate</div>
+                    </div>
+                </div>
+
+                <!-- Main Section: Active Clinical Trials Overview -->
+                <div class="section-header">
+                    <h2>Active Clinical Trials Overview</h2>
+                </div>
+                <div class="card">
+                    <table id="trials-table">
+                        <thead>
+                            <tr>
+                                <th>Trial & Indication</th>
+                                <th>Formulation / Batch</th>
+                                <th>Phase</th>
+                                <th>Patient Enrollment</th>
+                                <th>Assigned Staff</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trials-tbody">
+                            <tr>
+                                <td>
+                                    <span class="trial-code">AYU-DIAB-001</span>
+                                    <span class="trial-name">Efficacy of Nisha-Amalaki in Type 2 Diabetes</span>
+                                </td>
+                                <td>Multi-herb extract<br><span class="trial-name">Batch: #AIIA-2026-B4</span></td>
+                                <td><span class="badge badge-phase">Phase II</span></td>
+                                <td>
+                                    <div class="table-progress">
+                                        <div class="progress-container" style="margin-top: 0; width: 60px;">
+                                            <div class="progress-bar" style="width: 85%;"></div>
+                                        </div>
+                                        <span class="table-progress-text">128 / 150</span>
+                                    </div>
+                                </td>
+                                <td>Nurse Sunita R.<br><span class="trial-name">+ 2 others</span></td>
+                                <td><span class="badge badge-status-green">On Track</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn-icon" title="Manage Trial"><i
+                                                class="fa-solid fa-pen"></i></button>
+                                        <button class="btn-icon" title="Patient Roster"><i
+                                                class="fa-solid fa-users-viewfinder"></i></button>
+                                        <button class="btn-icon" title="Export CTRI Summary"><i
+                                                class="fa-solid fa-download"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span class="trial-code">AYU-ARTH-003</span>
+                                    <span class="trial-name">Guggulu efficacy in Osteoarthritis</span>
+                                </td>
+                                <td>Guggulu Resin<br><span class="trial-name">Batch: #AIIA-2026-G1</span></td>
+                                <td><span class="badge badge-phase">Phase III</span></td>
+                                <td>
+                                    <div class="table-progress">
+                                        <div class="progress-container" style="margin-top: 0; width: 60px;">
+                                            <div class="progress-bar" style="width: 45%;"></div>
+                                        </div>
+                                        <span class="table-progress-text">90 / 200</span>
+                                    </div>
+                                </td>
+                                <td>Nurse Priya M.<br><span class="trial-name">+ 1 other</span></td>
+                                <td><span class="badge badge-status-green">On Track</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn-icon" title="Manage Trial"><i
+                                                class="fa-solid fa-pen"></i></button>
+                                        <button class="btn-icon" title="Patient Roster"><i
+                                                class="fa-solid fa-users-viewfinder"></i></button>
+                                        <button class="btn-icon" title="Export CTRI Summary"><i
+                                                class="fa-solid fa-download"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span class="trial-code">AYU-HTN-002</span>
+                                    <span class="trial-name">Sarpagandha extract for Hypertension</span>
+                                </td>
+                                <td>Sarpagandha Extract<br><span class="trial-name">Batch: #AIIA-2025-S8</span></td>
+                                <td><span class="badge badge-phase">Phase III</span></td>
+                                <td>
+                                    <div class="table-progress">
+                                        <div class="progress-container" style="margin-top: 0; width: 60px;">
+                                            <div class="progress-bar" style="width: 100%; background-color: #10B981;">
+                                            </div>
+                                        </div>
+                                        <span class="table-progress-text">150 / 150</span>
+                                    </div>
+                                </td>
+                                <td>Nurse Ramesh K.<br><span class="trial-name">+ 3 others</span></td>
+                                <td><span class="badge badge-status-yellow">Data Lock</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn-icon" title="Manage Trial"><i
+                                                class="fa-solid fa-pen"></i></button>
+                                        <button class="btn-icon" title="Patient Roster"><i
+                                                class="fa-solid fa-users-viewfinder"></i></button>
+                                        <button class="btn-icon" title="Export CTRI Summary"><i
+                                                class="fa-solid fa-download"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Secondary Section: Two-Column Split -->
+                <div class="split-grid">
+                    <!-- Left Column -->
+                    <div>
+                        <div class="section-header">
+                            <h2>Assigned Clinical Research Coordinators (Nurses)</h2>
+                        </div>
+                        <div class="card">
+                            <ul class="list-group">
+                                <li class="list-item">
+                                    <div class="nurse-info">
+                                        <div class="nurse-avatar">SR</div>
+                                        <div class="nurse-details">
+                                            <h4>Sunita R.</h4>
+                                            <p>Assigned: AYU-DIAB-001</p>
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div class="nurse-status">14 eCRFs completed today</div>
+                                        <button class="btn-text">Reassign</button>
+                                    </div>
+                                </li>
+                                <li class="list-item">
+                                    <div class="nurse-info">
+                                        <div class="nurse-avatar">PM</div>
+                                        <div class="nurse-details">
+                                            <h4>Priya M.</h4>
+                                            <p>Assigned: AYU-ARTH-003</p>
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div class="nurse-status">8 eCRFs completed today</div>
+                                        <button class="btn-text">Reassign</button>
+                                    </div>
+                                </li>
+                                <li class="list-item">
+                                    <div class="nurse-info">
+                                        <div class="nurse-avatar">RK</div>
+                                        <div class="nurse-details">
+                                            <h4>Ramesh K.</h4>
+                                            <p>Assigned: AYU-HTN-002</p>
+                                        </div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div class="nurse-status">Data cleanup phase</div>
+                                        <button class="btn-text">Reassign</button>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div>
+                        <div class="section-header">
+                            <h2>Recent Trial Activity & Audit Snippets</h2>
+                        </div>
+                        <div class="card">
+                            <ul class="activity-feed">
+                                <li class="activity-item">
+                                    <div class="activity-icon bg-blue-light">
+                                        <i class="fa-solid fa-file-signature"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <p><strong>Nurse Priya</strong> logged Visit 3 for <strong>PT-1089</strong></p>
+                                        <span>2 hours ago • AYU-ARTH-003</span>
+                                    </div>
+                                </li>
+                                <li class="activity-item">
+                                    <div class="activity-icon bg-green-light">
+                                        <i class="fa-solid fa-check-double"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <p>CTRI approval validated for <strong>AYU-ARTH-003</strong></p>
+                                        <span>5 hours ago • Regulatory</span>
+                                    </div>
+                                </li>
+                                <li class="activity-item">
+                                    <div class="activity-icon bg-red-light">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <p>Safety team escalated adverse reaction for <strong>PT-1042</strong></p>
+                                        <span>18 mins ago • Pharmacovigilance</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div> <!-- End Split Grid -->
+            </section>
+
+            <!-- VIEW 2: CLINICAL TRIALS -->
+            <section id="view-clinical-trials" class="dashboard-view">
+                <div class="section-header">
+                    <h2>Clinical Trials Board</h2>
+                    <button class="btn-secondary"
+                        onclick="document.getElementById('new-trial-modal').classList.add('active')"><i
+                            class="fa-solid fa-plus"></i> New Protocol</button>
+                </div>
+                <div class="kanban-board">
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <span>Phase I (Safety)</span>
+                            <span class="badge badge-phase">1 Trial</span>
+                        </div>
+                        <div class="kanban-card">
+                            <span class="badge"
+                                style="background: #E0E7FF; color: #4338CA; margin-bottom: 8px;">Recruiting</span>
+                            <h4>AYU-TOX-001</h4>
+                            <p>Safety profile of new Rasayana</p>
+                            <div style="margin-top: 12px; font-size: 11px; color: var(--text-light);"><i
+                                    class="fa-solid fa-users"></i> 12 / 20 Enrolled</div>
+                        </div>
+                    </div>
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <span>Phase II (Efficacy)</span>
+                            <span class="badge badge-phase">2 Trials</span>
+                        </div>
+                        <div class="kanban-card">
+                            <span class="badge"
+                                style="background: #D1FAE5; color: #065F46; margin-bottom: 8px;">Active</span>
+                            <h4>AYU-DIAB-001</h4>
+                            <p>Nisha-Amalaki in Type 2 Diabetes</p>
+                            <div style="margin-top: 12px; font-size: 11px; color: var(--text-light);"><i
+                                    class="fa-solid fa-users"></i> 128 / 150 Enrolled</div>
+                        </div>
+                        <div class="kanban-card">
+                            <span class="badge"
+                                style="background: #D1FAE5; color: #065F46; margin-bottom: 8px;">Active</span>
+                            <h4>AYU-ASTH-004</h4>
+                            <p>Vasa Adhatoda in Mild Asthma</p>
+                            <div style="margin-top: 12px; font-size: 11px; color: var(--text-light);"><i
+                                    class="fa-solid fa-users"></i> 45 / 80 Enrolled</div>
+                        </div>
+                    </div>
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <span>Phase III (Comparative)</span>
+                            <span class="badge badge-phase">2 Trials</span>
+                        </div>
+                        <div class="kanban-card">
+                            <span class="badge" style="background: #FEF3C7; color: #92400E; margin-bottom: 8px;">Data
+                                Lock</span>
+                            <h4>AYU-HTN-002</h4>
+                            <p>Sarpagandha extract for Hypertension</p>
+                            <div style="margin-top: 12px; font-size: 11px; color: var(--text-light);"><i
+                                    class="fa-solid fa-users"></i> 150 / 150 Enrolled</div>
+                        </div>
+                        <div class="kanban-card">
+                            <span class="badge"
+                                style="background: #D1FAE5; color: #065F46; margin-bottom: 8px;">Active</span>
+                            <h4>AYU-ARTH-003</h4>
+                            <p>Guggulu efficacy in Osteoarthritis</p>
+                            <div style="margin-top: 12px; font-size: 11px; color: var(--text-light);"><i
+                                    class="fa-solid fa-users"></i> 90 / 200 Enrolled</div>
+                        </div>
+                    </div>
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <span>Completed / Export Ready</span>
+                            <span class="badge badge-phase">1 Trial</span>
+                        </div>
+                        <div class="kanban-card">
+                            <span class="badge"
+                                style="background: #F1F5F9; color: #475569; margin-bottom: 8px;">Archived</span>
+                            <h4>AYU-SKIN-001</h4>
+                            <p>Neem extract for Acne Vulgaris</p>
+                            <div style="margin-top: 12px; font-size: 11px; color: var(--text-light);"><i
+                                    class="fa-solid fa-check-circle"></i> CTRI Exported</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 3: PATIENT ROSTER -->
+            <section id="view-patient-roster" class="dashboard-view">
+                <div class="section-header">
+                    <h2>Patient Roster</h2>
+                    <button class="btn-primary"><i class="fa-solid fa-user-plus"></i> Enroll Patient</button>
+                </div>
+                <div class="filter-bar">
+                    <div class="search-bar">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" placeholder="Search Patient ID...">
+                    </div>
+                    <select>
+                        <option value="all">Filter by Trial: All Trials</option>
+                        <option value="AYU-DIAB-001">AYU-DIAB-001</option>
+                        <option value="AYU-ARTH-003">AYU-ARTH-003</option>
+                        <option value="AYU-HTN-002">AYU-HTN-002</option>
+                    </select>
+                </div>
+                <div class="card">
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Assigned Trial</th>
+                                <th>Prakriti Type</th>
+                                <th>Current Status</th>
+                                <th>Last Visit Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>PT-1042</strong></td>
+                                <td>AYU-DIAB-001</td>
+                                <td>Kapha-Pitta</td>
+                                <td><span class="badge badge-status-green">Active</span></td>
+                                <td>10 Sep 2026</td>
+                                <td><button class="btn-text">View eCRF</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>PT-1089</strong></td>
+                                <td>AYU-ARTH-003</td>
+                                <td>Vata-Kapha</td>
+                                <td><span class="badge badge-status-green">Active</span></td>
+                                <td>08 Sep 2026</td>
+                                <td><button class="btn-text">View eCRF</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>PT-0912</strong></td>
+                                <td>AYU-HTN-002</td>
+                                <td>Pitta</td>
+                                <td><span class="badge" style="background: #FEE2E2; color: #991B1B;">Dropped</span></td>
+                                <td>25 Aug 2026</td>
+                                <td><button class="btn-text">View eCRF</button></td>
+                            </tr>
+                            <tr>
+                                <td><strong>PT-1105</strong></td>
+                                <td>AYU-ASTH-004</td>
+                                <td>Vata</td>
+                                <td><span class="badge badge-status-green">Active</span></td>
+                                <td>09 Sep 2026</td>
+                                <td><button class="btn-text">View eCRF</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW 4: CLINICAL STAFF -->
+            <section id="view-clinical-staff" class="dashboard-view">
+                <div class="section-header">
+                    <h2>Clinical Staff Directory</h2>
+                    <button class="btn-secondary"><i class="fa-solid fa-user-plus"></i> Add Staff</button>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <div class="avatar avatar">SR</div>
+                        <h4>Nurse Sunita R.</h4>
+                        <p>Active Workload: Assigned to 42 Patients</p>
+                        <div style="margin-bottom: 16px;"><span class="badge badge-status-green">Online</span></div>
+                        <button class="btn-secondary" style="width: 100%;">Reassign Workload</button>
+                    </div>
+                    <div class="staff-card">
+                        <div class="avatar avatar">PM</div>
+                        <h4>Nurse Priya M.</h4>
+                        <p>Active Workload: Assigned to 35 Patients</p>
+                        <div style="margin-bottom: 16px;"><span class="badge badge-status-green">Online</span></div>
+                        <button class="btn-secondary" style="width: 100%;">Reassign Workload</button>
+                    </div>
+                    <div class="staff-card">
+                        <div class="avatar avatar">RK</div>
+                        <h4>Nurse Ramesh K.</h4>
+                        <p>Active Workload: Assigned to 50 Patients</p>
+                        <div style="margin-bottom: 16px;"><span class="badge"
+                                style="background: #F1F5F9; color: #64748B;">Offline</span></div>
+                        <button class="btn-secondary" style="width: 100%;">Reassign Workload</button>
+                    </div>
+                    <div class="staff-card">
+                        <div class="avatar avatar">AN</div>
+                        <h4>Coordinator Anjali N.</h4>
+                        <p>Active Workload: Assigned to 18 Patients</p>
+                        <div style="margin-bottom: 16px;"><span class="badge badge-status-green">Online</span></div>
+                        <button class="btn-secondary" style="width: 100%;">Reassign Workload</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 5: SAFETY ALERTS -->
+            <section id="view-safety-alerts" class="dashboard-view">
+                <div class="section-header">
+                    <h2>Pharmacovigilance Triage Inbox</h2>
+                </div>
+                <div class="triage-section">
+                    <h3 style="margin-bottom: 16px; color: var(--danger); font-size: 16px;"><i
+                            class="fa-solid fa-triangle-exclamation"></i> Unresolved Alerts (2)</h3>
+
+                    <div class="alert-row">
+                        <div class="alert-text">
+                            <h4 style="color: #991B1B; font-size: 15px; margin-bottom: 4px;">Grade 3 Tachycardia &
+                                Dizziness</h4>
+                            <p style="color: #475569;">Patient <strong>PT-1042</strong> (AYU-DIAB-001) • Reported 18
+                                mins ago</p>
+                        </div>
+                        <button class="btn-primary" style="background: var(--danger);"><i class="fa-solid fa-bolt"></i>
+                            Review & Escalate</button>
+                    </div>
+
+                    <div class="alert-row" style="border-left-color: var(--warning);">
+                        <div class="alert-text">
+                            <h4 style="color: #B45309; font-size: 15px; margin-bottom: 4px;">Mild Allergic Rash (Grade
+                                1)</h4>
+                            <p style="color: #475569;">Patient <strong>PT-1089</strong> (AYU-ARTH-003) • Reported 2
+                                hours ago</p>
+                        </div>
+                        <button class="btn-primary" style="background: var(--warning); border-color: var(--warning);"><i
+                                class="fa-solid fa-bolt"></i> Review & Escalate</button>
+                    </div>
+                </div>
+
+                <div class="triage-section">
+                    <h3 style="margin-bottom: 16px; color: var(--text-light); font-size: 16px;"><i
+                            class="fa-solid fa-check-double"></i> Resolved / Acknowledged Alerts</h3>
+
+                    <div class="alert-row resolved">
+                        <div class="alert-text">
+                            <h4 style="font-size: 15px; margin-bottom: 4px;">Nausea Post-Dosage</h4>
+                            <p style="color: #64748B;">Patient <strong>PT-0912</strong> (AYU-HTN-002) • Resolved on 05
+                                Sep 2026</p>
+                        </div>
+                        <span class="badge"
+                            style="background: #E2E8F0; color: #475569; padding: 6px 12px;">Acknowledged</span>
+                    </div>
+                    <div class="alert-row resolved">
+                        <div class="alert-text">
+                            <h4 style="font-size: 15px; margin-bottom: 4px;">Elevated Liver Enzymes (Grade 2)</h4>
+                            <p style="color: #64748B;">Patient <strong>PT-0855</strong> (AYU-DIAB-001) • Resolved on 28
+                                Aug 2026</p>
+                        </div>
+                        <span class="badge"
+                            style="background: #E2E8F0; color: #475569; padding: 6px 12px;">Acknowledged</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 6: AUDIT TRAIL -->
+            <section id="view-audit-trail" class="dashboard-view">
+                <div class="section-header">
+                    <h2>GCP Audit Trail</h2>
+                    <button class="btn-secondary"><i class="fa-solid fa-download"></i> Export Log (PDF)</button>
+                </div>
+                <div class="audit-table-wrapper">
+                    <table class="audit-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th
+                                    style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color);">
+                                    Timestamp (UTC)</th>
+                                <th
+                                    style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color);">
+                                    User ID / Role</th>
+                                <th
+                                    style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color);">
+                                    Action Performed</th>
+                                <th
+                                    style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color);">
+                                    Old Value</th>
+                                <th
+                                    style="padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color);">
+                                    New Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">2026-09-10
+                                    17:15:32</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">NURSE_PRIYA
+                                    (Coordinator)</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">Updated eCRF
+                                    Vitals [PT-1089]</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">BP: 120/80</td>
+                                <td
+                                    style="padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--accent-dark);">
+                                    BP: 125/82</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">2026-09-10
+                                    15:42:10</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">DR_ASHARMA
+                                    (Principal Inv.)</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">Acknowledged
+                                    Safety Alert</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">Status: OPEN
+                                </td>
+                                <td
+                                    style="padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--accent-dark);">
+                                    Status: ACKNOWLEDGED</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">2026-09-09
+                                    11:20:05</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">REG_ADMIN
+                                    (Regulatory)</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">Modified Trial
+                                    Protocol [AYU-ARTH-003]</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">Version 1.2
+                                </td>
+                                <td
+                                    style="padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--accent-dark);">
+                                    Version 1.3</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">2026-09-08
+                                    09:10:45</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">NURSE_SUNITA
+                                    (Coordinator)</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">Enrolled New
+                                    Subject</td>
+                                <td style="padding: 12px; border-bottom: 1px solid var(--border-color);">N/A</td>
+                                <td
+                                    style="padding: 12px; border-bottom: 1px solid var(--border-color); color: var(--accent-dark);">
+                                    PT-1043 Created</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div> <!-- End Content Area -->
+    </main>
+
+    <!-- 7. Interactive Modals -->
+    <!-- Create New Trial Modal -->
+    <div class="modal-overlay" id="new-trial-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Clinical Trial</h2>
+                <button class="close-modal" id="btn-close-modal" title="Close"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="newTrialForm">
+                    <div class="form-group">
+                        <label class="form-label">Trial Title</label>
+                        <input type="text" class="form-control" id="form-title"
+                            placeholder="e.g. Efficacy of Herb in Disease" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">CTRI Registration ID</label>
+                            <input type="text" class="form-control" id="form-ctri" placeholder="e.g. CTRI/2026/01/0123"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Indication (Disease)</label>
+                            <input type="text" class="form-control" id="form-indication"
+                                placeholder="e.g. Diabetes Type 2" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Formulation / Botanical Ingredients</label>
+                        <input type="text" class="form-control" id="form-formulation"
+                            placeholder="e.g. Multi-herb extract" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Target Sample Size</label>
+                            <input type="number" class="form-control" id="form-sample" placeholder="e.g. 150" min="1"
+                                required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phase</label>
+                            <select class="form-control" id="form-phase">
+                                <option value="Phase I">Phase I</option>
+                                <option value="Phase II" selected>Phase II</option>
+                                <option value="Phase III">Phase III</option>
+                                <option value="Phase IV">Phase IV</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Primary Assigned Nurse</label>
+                        <select class="form-control" id="form-nurse">
+                            <option value="Nurse Sunita R.">Nurse Sunita R.</option>
+                            <option value="Nurse Priya M.">Nurse Priya M.</option>
+                            <option value="Nurse Ramesh K.">Nurse Ramesh K.</option>
+                            <option value="Unassigned">Leave Unassigned</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btn-cancel-modal" type="button">Cancel</button>
+                <button class="btn-primary" id="btn-submit-trial" type="button">Submit Protocol</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container">
+        <div class="toast" id="success-toast">
+            <i class="fa-solid fa-circle-check"></i>
+            <div class="toast-content">
+                <h4>Trial Created Successfully</h4>
+                <p>The clinical trial protocol has been initiated.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // SPA View Switcher Function
+        function switchView(viewId, element) {
+            // Update active navigation link
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(nav => nav.classList.remove('active'));
+            if (element) {
+                element.classList.add('active');
+            }
+
+            // Hide all views
+            const views = document.querySelectorAll('.dashboard-view');
+            views.forEach(view => {
+                view.classList.remove('active');
+            });
+
+            // Show target view
+            const target = document.getElementById(viewId);
+            if (target) {
+                target.classList.add('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // DOM Elements
+            const alertBanner = document.getElementById('pharmacovigilance-alert');
+            const btnAckAlert = document.getElementById('btn-ack-alert');
+            const navAlertBadge = document.getElementById('nav-alert-badge');
+            const bellIndicator = document.getElementById('bell-indicator');
+            const kpiFlagsCount = document.getElementById('kpi-flags-count');
+
+            const btnNewTrial = document.getElementById('btn-new-trial');
+            const modalOverlay = document.getElementById('new-trial-modal');
+            const btnCloseModal = document.getElementById('btn-close-modal');
+            const btnCancelModal = document.getElementById('btn-cancel-modal');
+            const btnSubmitTrial = document.getElementById('btn-submit-trial');
+            const newTrialForm = document.getElementById('newTrialForm');
+
+            const searchInput = document.getElementById('trialSearch');
+            const trialsTbody = document.getElementById('trials-tbody');
+
+            const kpiTrialsCount = document.getElementById('kpi-trials-count');
+            const successToast = document.getElementById('success-toast');
+
+            let activeTrials = 4;
+
+            // 1. Alert Banner Interaction (Dismissal)
+            if (btnAckAlert) {
+                btnAckAlert.addEventListener('click', () => {
+                    alertBanner.style.transform = 'translateY(-10px)';
+                    alertBanner.style.opacity = '0';
+                    setTimeout(() => {
+                        alertBanner.style.display = 'none';
+                        // Update counters visually
+                        if (navAlertBadge) navAlertBadge.textContent = '2';
+                        if (kpiFlagsCount) {
+                            kpiFlagsCount.textContent = '1 Open Flag';
+                            kpiFlagsCount.nextElementSibling.textContent = '1 Moderate';
+                        }
+                        // Stop bell pulsing animation
+                        if (bellIndicator) {
+                            bellIndicator.style.animation = 'none';
+                            bellIndicator.style.backgroundColor = 'transparent';
+                            bellIndicator.classList.remove('bell-pulse');
+                        }
+                    }, 300);
+                });
+            }
+
+            // 2. Modal Interactions
+            const openModal = () => modalOverlay.classList.add('active');
+            const closeModal = () => {
+                modalOverlay.classList.remove('active');
+                newTrialForm.reset();
+            };
+
+            btnNewTrial.addEventListener('click', openModal);
+            btnCloseModal.addEventListener('click', closeModal);
+            btnCancelModal.addEventListener('click', closeModal);
+
+            // Close modal on clicking outside the modal content
+            modalOverlay.addEventListener('click', (e) => {
+                if (e.target === modalOverlay) closeModal();
+            });
+
+            // 3. Form Submission & Dynamic Table Row Creation
+            btnSubmitTrial.addEventListener('click', () => {
+                // Validate HTML5 form constraints
+                if (!newTrialForm.checkValidity()) {
+                    newTrialForm.reportValidity();
+                    return;
+                }
+
+                // Extract values
+                const title = document.getElementById('form-title').value;
+                const indication = document.getElementById('form-indication').value;
+                const formulation = document.getElementById('form-formulation').value;
+                const sample = document.getElementById('form-sample').value;
+                const phase = document.getElementById('form-phase').value;
+                const nurse = document.getElementById('form-nurse').value;
+                const ctri = document.getElementById('form-ctri').value;
+
+                // Auto-generate a dummy trial code based on indication
+                const shortInd = indication.length >= 3 ? indication.substring(0, 3).toUpperCase() : 'NEW';
+                const trialCode = `AYU-${shortInd}-004`;
+
+                // Build HTML for the new table row
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <span class="trial-code">${trialCode}</span>
+                        <span class="trial-name">${title}</span>
+                    </td>
+                    <td>${formulation}<br><span class="trial-name">Reg: ${ctri}</span></td>
+                    <td><span class="badge badge-phase">${phase}</span></td>
+                    <td>
+                        <div class="table-progress">
+                            <div class="progress-container" style="margin-top: 0; width: 60px;">
+                                <div class="progress-bar" style="width: 0%;"></div>
+                            </div>
+                            <span class="table-progress-text">0 / ${sample}</span>
+                        </div>
+                    </td>
+                    <td>${nurse}<br><span class="trial-name">Newly Assigned</span></td>
+                    <td><span class="badge badge-status-green" style="background-color: #E0F2FE; color: #0284C7;">Initiated</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-icon" title="Manage Trial"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-icon" title="Patient Roster"><i class="fa-solid fa-users-viewfinder"></i></button>
+                            <button class="btn-icon" title="Export CTRI Summary"><i class="fa-solid fa-download"></i></button>
+                        </div>
+                    </td>
+                `;
+
+                // Prepend to table body
+                if (trialsTbody) {
+                    trialsTbody.insertBefore(tr, trialsTbody.firstChild);
+                }
+
+                // Update KPI Card Counter
+                activeTrials++;
+                if (kpiTrialsCount) {
+                    kpiTrialsCount.textContent = `${activeTrials} Active`;
+                }
+
+                // Close Modal and Show Success Toast
+                closeModal();
+
+                successToast.classList.add('show');
+                setTimeout(() => {
+                    successToast.classList.remove('show');
+                }, 3000);
+            });
+
+            // 4. Real-Time Table Search Filter (Global for main Overview Table)
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase();
+                    if (trialsTbody) {
+                        const rows = trialsTbody.querySelectorAll('tr');
+                        rows.forEach(row => {
+                            const trialInfo = row.cells[0].textContent.toLowerCase();
+                            const formulationInfo = row.cells[1].textContent.toLowerCase();
+                            const searchableText = trialInfo + " " + formulationInfo;
+
+                            if (searchableText.includes(query)) {
+                                row.style.display = '';
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

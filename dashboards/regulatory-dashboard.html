@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethics & Regulatory Surveillance Portal - AIIA CTMS</title>
+    <link rel="stylesheet" href="../css/global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* SPA View Management */
+        .dashboard-view { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .dashboard-view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* General Typography Overrides */
+        h2 { font-size: 20px; margin-bottom: 16px; color: var(--text-main); font-weight: 600; }
+        h3 { font-size: 16px; color: var(--text-main); font-weight: 600; margin-bottom: 8px; }
+        p { margin-bottom: 8px; color: var(--text-main); line-height: 1.5; }
+        
+        /* Grid Layouts */
+        .trials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px; }
+        .export-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px; }
+
+        /* Specific Cards */
+        .trial-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            flex-direction: column;
+        }
+        .trial-card-header { margin-bottom: 12px; }
+        .trial-title { font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .ctri-link { color: var(--primary-accent); font-family: monospace; font-size: 13px; text-decoration: none; font-weight: 600; display: inline-block; margin-bottom: 12px;}
+        .ctri-link:hover { text-decoration: underline; }
+        .trial-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.6; }
+        .trial-actions { display: flex; gap: 8px; margin-top: auto; flex-wrap: wrap; }
+        
+        .export-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+        }
+        .export-icon { font-size: 32px; color: var(--primary-accent); margin-bottom: 16px; }
+
+        /* Alerts & Banners */
+        .pv-alert-banner {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-amber);
+            border-left: 4px solid var(--warning-amber);
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        .pv-alert-content { display: flex; align-items: flex-start; gap: 12px; }
+        .pv-alert-icon { font-size: 20px; color: var(--warning-amber); margin-top: 2px;}
+        
+        .verification-banner {
+            background: var(--success-bg);
+            border: 1px solid var(--success-green);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            color: var(--success-green);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Tables & Badges */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border-subtle); }
+        th { font-size: 12px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; background: #F8FAFC;}
+        td { font-size: 14px; color: var(--text-main); }
+        tr.clickable { cursor: pointer; transition: background 0.2s; }
+        tr.clickable:hover { background: var(--bg-app); }
+
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; border: 1px solid transparent; }
+        .badge-success { background: var(--success-bg); color: var(--success-green); border-color: var(--success-green); }
+        .badge-warning { background: var(--warning-bg); color: var(--warning-amber); border-color: var(--warning-amber); }
+        .badge-danger { background: var(--danger-bg); color: var(--danger-red); border-color: var(--danger-red); }
+        .badge-neutral { background: #F1F5F9; color: var(--text-muted); border-color: var(--border-subtle); }
+        
+        .btn-action { background: white; border: 1px solid var(--border-subtle); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text-main); transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-action:hover { border-color: var(--primary-accent); color: var(--primary-accent); }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--bg-surface); width: 100%; max-width: 550px; border-radius: var(--radius-md);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden;
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-header { padding: 16px 24px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: #FAFAFA; }
+        .modal-header h3 { margin: 0; font-size: 18px; color: var(--text-main); }
+        .close-btn { background: none; border: none; font-size: 20px; color: var(--text-muted); cursor: pointer; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: flex-end; gap: 12px; background: #FAFAFA; }
+
+        /* Progress Bar in Modal */
+        .progress-wrapper { margin-bottom: 24px; }
+        .progress-bar-bg { width: 100%; height: 8px; background: #E2E8F0; border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: var(--primary-accent); width: 0%; transition: width 0.3s ease; }
+        .progress-status { font-size: 13px; color: var(--text-muted); margin-top: 8px; text-align: center; font-weight: 500;}
+
+        /* Data Inspector */
+        .inspector-row { display: flex; border-bottom: 1px solid var(--border-subtle); padding: 12px 0; }
+        .inspector-row:last-child { border-bottom: none; }
+        .inspector-label { width: 40%; font-size: 13px; color: var(--text-muted); font-weight: 600; }
+        .inspector-value { width: 60%; font-size: 14px; color: var(--text-main); font-family: monospace; word-break: break-all; }
+
+        /* Toasts */
+        .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1100; display: flex; flex-direction: column; gap: 12px; }
+        .toast {
+            background: var(--bg-surface); padding: 16px 20px; border-radius: var(--radius-md);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-left: 4px solid var(--success-green);
+            display: flex; align-items: center; gap: 12px; transform: translateX(120%); transition: transform 0.3s ease;
+        }
+        .toast.show { transform: translateX(0); }
+        .toast-icon { font-size: 20px; color: var(--success-green); }
+        .toast-text { font-size: 14px; font-weight: 600; color: var(--text-main); }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <i class="fa-solid fa-shield-halved"></i>
+            <div>
+                <div class="sidebar-title">AIIA CTMS</div>
+                <div class="sidebar-subtitle">ETHICS & REGULATORY AUDIT</div>
+            </div>
+        </div>
+        <nav class="nav-menu">
+            <a class="nav-item active nav-link" onclick="switchView('view-overview', this)">
+                <i class="fa-solid fa-chart-pie"></i> Dashboard Overview
+            </a>
+            <a class="nav-item nav-link" onclick="switchView('view-trials', this)">
+                <i class="fa-solid fa-flask"></i> Trial Overviews
+            </a>
+            <a class="nav-item nav-link" onclick="switchView('view-audit', this)">
+                <i class="fa-solid fa-lock"></i> Immutable Audit Trail
+            </a>
+            <a class="nav-item nav-link" onclick="switchView('view-export', this)">
+                <i class="fa-solid fa-file-export"></i> Export Center (CTRI)
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="avatar-container">
+                    <div class="avatar">RO</div>
+                    <div class="status-dot"></div>
+                </div>
+                <div class="user-info">
+                    <h4>Dr. P. K. Nambiar</h4>
+                    <p>Ethics Auditor (REG-9042)</p>
+                </div>
+            </div>
+            <a href="../index.html" class="switch-role-btn">
+                <i class="fa-solid fa-right-from-bracket"></i> Switch Role / Back to Hub
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <header class="header">
+            <div class="header-title">
+                <h1>Ethics & Regulatory Surveillance Portal</h1>
+                <p>Central Ethics Committee (CEC) • Good Clinical Practice (GCP) Verification</p>
+            </div>
+            <div class="header-controls">
+                <div class="search-bar">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" placeholder="Search audit logs, hash IDs, trials...">
+                </div>
+                <button class="btn-primary" style="background: var(--success-green); border-color: var(--success-green);" onclick="openModal('ctri-modal')">
+                    <i class="fa-solid fa-download"></i> Export CTRI Report
+                </button>
+            </div>
+        </header>
+
+        <div class="content-area">
+            
+            <!-- VIEW 1: DASHBOARD OVERVIEW -->
+            <section id="view-overview" class="dashboard-view active">
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-header"><h3>Active Clinical Trials</h3><i class="fa-solid fa-flask text-muted"></i></div>
+                        <div class="kpi-value">4 Active</div>
+                        <div class="kpi-subtitle">100% Registered on CTRI</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><h3>Enrolled Trial Subjects</h3><i class="fa-solid fa-users text-muted"></i></div>
+                        <div class="kpi-value">312 / 335</div>
+                        <div class="kpi-subtitle">93.1% Target Recruitment</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><h3>Active Safety Alerts (ADRs)</h3><i class="fa-solid fa-triangle-exclamation" style="color: var(--warning-amber);"></i></div>
+                        <div class="kpi-value" style="color: var(--warning-amber);">2 Open Flags</div>
+                        <div class="kpi-subtitle">All triaged within 24h GCP rule</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-header"><h3>Tamper-Proof Audit Records</h3><i class="fa-solid fa-lock" style="color: var(--success-green);"></i></div>
+                        <div class="kpi-value" style="color: var(--success-green);">9,418 Logs</div>
+                        <div class="kpi-subtitle">SHA-256 Validated • 0 Mismatches</div>
+                    </div>
+                </div>
+
+                <!-- Active PV Alert Banner -->
+                <div class="pv-alert-banner">
+                    <div class="pv-alert-content">
+                        <i class="fa-solid fa-triangle-exclamation pv-alert-icon"></i>
+                        <div>
+                            <div style="font-weight: 700; color: var(--warning-amber); margin-bottom: 4px;">Active Pharmacovigilance Alert #ADR-882</div>
+                            <div style="font-size: 13px; color: var(--text-main);">Subject P-084 reported mild dizziness following morning Nisha-Amalaki dose. Duty Safety Officer confirmed Grade 1 ADR.</div>
+                        </div>
+                    </div>
+                    <button class="btn-outline" style="background: white; border-color: var(--warning-amber); color: var(--warning-amber);" onclick="switchView('view-audit')">
+                        <i class="fa-solid fa-magnifying-glass"></i> Inspect Audit Log
+                    </button>
+                </div>
+
+                <!-- High-Level Trial Surveillance Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                            <h3>High-Level Clinical Trial Surveillance</h3>
+                        </div>
+                        <button class="btn-outline" onclick="switchView('view-trials')">View All Trials &rarr;</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Trial & CTRI Code</th>
+                                    <th>Department / PI</th>
+                                    <th>Enrollment Progress</th>
+                                    <th>Safety Alerts</th>
+                                    <th>GCP Compliance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 600;">Nisha-Amalaki Yoga (T2DM)</div>
+                                        <div style="font-family: monospace; font-size: 12px; color: var(--primary-accent);">CTRI/2026/08/042189</div>
+                                    </td>
+                                    <td>Kayachikitsa<br><span style="font-size: 12px; color: var(--text-muted);">Dr. Suhasini V.</span></td>
+                                    <td>
+                                        <div style="font-weight: 600;">50/60 <span style="font-weight: normal; color: var(--text-muted);">(83%)</span></div>
+                                    </td>
+                                    <td><span class="badge badge-warning">2 Alerts</span></td>
+                                    <td><span class="badge badge-success">98.2% Compliant</span></td>
+                                    <td><button class="btn-action"><i class="fa-solid fa-list-check"></i> Audit Protocol</button></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 600;">Ashwagandha Ghrita (Anxiety)</div>
+                                        <div style="font-family: monospace; font-size: 12px; color: var(--primary-accent);">CTRI/2026/04/039821</div>
+                                    </td>
+                                    <td>Manasa Roga<br><span style="font-size: 12px; color: var(--text-muted);">Dr. R. K. Joshi</span></td>
+                                    <td>
+                                        <div style="font-weight: 600;">120/120 <span style="font-weight: normal; color: var(--text-muted);">(100%)</span></div>
+                                    </td>
+                                    <td><span class="badge badge-success">0 Alerts</span></td>
+                                    <td><span class="badge badge-success">99.4% Compliant</span></td>
+                                    <td><button class="btn-action"><i class="fa-solid fa-list-check"></i> Audit Protocol</button></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div style="font-weight: 600;">Guggulu Shodhana (Arthritis)</div>
+                                        <div style="font-family: monospace; font-size: 12px; color: var(--primary-accent);">CTRI/2026/01/037742</div>
+                                    </td>
+                                    <td>Shalya Tantra<br><span style="font-size: 12px; color: var(--text-muted);">Dr. Sharma</span></td>
+                                    <td>
+                                        <div style="font-weight: 600;">142/155 <span style="font-weight: normal; color: var(--text-muted);">(91%)</span></div>
+                                    </td>
+                                    <td><span class="badge badge-warning">1 Alert</span></td>
+                                    <td><span class="badge badge-success">97.8% Compliant</span></td>
+                                    <td><button class="btn-action"><i class="fa-solid fa-list-check"></i> Audit Protocol</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: TRIAL OVERVIEWS -->
+            <section id="view-trials" class="dashboard-view">
+                <h2>Protocol Registry & Ethics Approvals</h2>
+                <div class="trials-grid">
+                    <!-- Card 1 -->
+                    <div class="trial-card">
+                        <div class="trial-card-header">
+                            <span class="badge badge-neutral" style="margin-bottom: 8px;">Phase II Interventional</span>
+                            <div class="trial-title">Nisha-Amalaki Yoga (T2DM)</div>
+                            <a href="#" class="ctri-link">CTRI/2026/08/042189</a>
+                        </div>
+                        <div class="trial-meta">
+                            <strong>PI:</strong> Dr. Suhasini V. (Kayachikitsa)<br>
+                            <strong>Site:</strong> AIIA OPD Block A<br>
+                            <strong>Formulation:</strong> 500mg capsules (Standardized)<br>
+                            <strong>Recruitment:</strong> 50/60 Subjects Enrolled
+                        </div>
+                        <div class="progress-bar-bg" style="margin-bottom: 16px;">
+                            <div class="progress-bar-fill" style="width: 83%;"></div>
+                        </div>
+                        <div style="font-size: 12px; color: var(--success-green); font-weight: 600; margin-bottom: 16px;">
+                            <i class="fa-solid fa-check-circle"></i> CEC Approved (Valid till Dec 2027)
+                        </div>
+                        <div class="trial-actions">
+                            <button class="btn-action"><i class="fa-solid fa-file-pdf"></i> View CEC Approval</button>
+                            <button class="btn-action"><i class="fa-solid fa-signature"></i> Inspect Consent</button>
+                        </div>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="trial-card">
+                        <div class="trial-card-header">
+                            <span class="badge badge-neutral" style="margin-bottom: 8px;">Phase III Multicentric</span>
+                            <div class="trial-title">Ashwagandha Ghrita (Anxiety)</div>
+                            <a href="#" class="ctri-link">CTRI/2026/04/039821</a>
+                        </div>
+                        <div class="trial-meta">
+                            <strong>PI:</strong> Dr. R. K. Joshi (Manasa Roga)<br>
+                            <strong>Site:</strong> AIIA & IPGTRA<br>
+                            <strong>Formulation:</strong> Medhya Rasayana 10ml OD<br>
+                            <strong>Recruitment:</strong> 120/120 Subjects Enrolled
+                        </div>
+                        <div class="progress-bar-bg" style="margin-bottom: 16px;">
+                            <div class="progress-bar-fill" style="width: 100%;"></div>
+                        </div>
+                        <div style="font-size: 12px; color: var(--success-green); font-weight: 600; margin-bottom: 16px;">
+                            <i class="fa-solid fa-check-circle"></i> CEC Approved (Valid till Jun 2027)
+                        </div>
+                        <div class="trial-actions">
+                            <button class="btn-action"><i class="fa-solid fa-file-pdf"></i> View CEC Approval</button>
+                            <button class="btn-action"><i class="fa-solid fa-signature"></i> Inspect Consent</button>
+                        </div>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="trial-card">
+                        <div class="trial-card-header">
+                            <span class="badge badge-neutral" style="margin-bottom: 8px;">Phase II Add-on</span>
+                            <div class="trial-title">Guggulu Shodhana (Arthritis)</div>
+                            <a href="#" class="ctri-link">CTRI/2026/01/037742</a>
+                        </div>
+                        <div class="trial-meta">
+                            <strong>PI:</strong> Dr. Sharma (Shalya Tantra)<br>
+                            <strong>Site:</strong> AIIA Shalya OPD<br>
+                            <strong>Formulation:</strong> Guggulu Compound 250mg BD<br>
+                            <strong>Recruitment:</strong> 142/155 Subjects Enrolled
+                        </div>
+                        <div class="progress-bar-bg" style="margin-bottom: 16px;">
+                            <div class="progress-bar-fill" style="width: 91%;"></div>
+                        </div>
+                        <div style="font-size: 12px; color: var(--success-green); font-weight: 600; margin-bottom: 16px;">
+                            <i class="fa-solid fa-check-circle"></i> CEC Approved (Valid till Aug 2027)
+                        </div>
+                        <div class="trial-actions">
+                            <button class="btn-action"><i class="fa-solid fa-file-pdf"></i> View CEC Approval</button>
+                            <button class="btn-action"><i class="fa-solid fa-signature"></i> Inspect Consent</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 3: IMMUTABLE AUDIT TRAIL -->
+            <section id="view-audit" class="dashboard-view">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h2>Immutable Audit Trail</h2>
+                    <div style="display: flex; gap: 12px;">
+                        <select class="btn-outline" style="padding: 8px 12px; font-size: 13px;">
+                            <option>Filter by User Role</option>
+                            <option>PI</option>
+                            <option>CRC / Nurse</option>
+                            <option>Safety Officer</option>
+                        </select>
+                        <select class="btn-outline" style="padding: 8px 12px; font-size: 13px;">
+                            <option>Filter by Event Type</option>
+                            <option>eCRF Update</option>
+                            <option>Protocol Amendment</option>
+                            <option>Adverse Event</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="verification-banner">
+                    <i class="fa-solid fa-shield-check"></i>
+                    <span>🛡️ Cryptographic Ledger Integrity: Verified (Hash root: 0x8f2a...c31e - No manual overwrites detected)</span>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Timestamp (IST)</th>
+                                    <th>Transaction ID</th>
+                                    <th>User Role / ID</th>
+                                    <th>Action Performed</th>
+                                    <th>Field Modified</th>
+                                    <th>Prior Value</th>
+                                    <th>New Value</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="clickable" onclick="openAuditDetail('TX-9418', 'Nurse Sunita (CRC)', 'Logged eCRF Visit 3', '120 mmHg', '138 mmHg', 'Verified')">
+                                    <td class="text-muted" style="font-family: monospace;">2026-09-15 11:24:02</td>
+                                    <td style="font-family: monospace; font-weight: 600;">#TX-9418</td>
+                                    <td>Nurse Sunita (CRC)</td>
+                                    <td>Logged eCRF Visit 3</td>
+                                    <td>Systolic BP</td>
+                                    <td style="color: var(--text-muted); text-decoration: line-through;">120 mmHg</td>
+                                    <td style="font-weight: 600;">138 mmHg</td>
+                                    <td><span class="badge badge-success">Verified</span></td>
+                                </tr>
+                                <tr class="clickable" onclick="openAuditDetail('TX-9417', 'Safety Officer Kulkarni', 'Escalated SAE Alert', 'None', 'Grade 2 Adverse Event', 'Flagged')">
+                                    <td class="text-muted" style="font-family: monospace;">2026-09-15 10:45:11</td>
+                                    <td style="font-family: monospace; font-weight: 600;">#TX-9417</td>
+                                    <td>Safety Officer Kulkarni</td>
+                                    <td>Escalated SAE Alert</td>
+                                    <td>Alert Severity</td>
+                                    <td style="color: var(--text-muted); text-decoration: line-through;">None</td>
+                                    <td style="font-weight: 600; color: var(--danger-red);">Grade 2 Adverse Event</td>
+                                    <td><span class="badge badge-warning">Flagged</span></td>
+                                </tr>
+                                <tr class="clickable" onclick="openAuditDetail('TX-9416', 'Dr. Sharma (PI)', 'Protocol Amendment', 'OD (Once Daily)', 'BD (Twice Daily)', 'Signed & Locked')">
+                                    <td class="text-muted" style="font-family: monospace;">2026-09-15 09:12:44</td>
+                                    <td style="font-family: monospace; font-weight: 600;">#TX-9416</td>
+                                    <td>Dr. Sharma (PI)</td>
+                                    <td>Protocol Amendment</td>
+                                    <td>Dose Frequency</td>
+                                    <td style="color: var(--text-muted); text-decoration: line-through;">OD (Once Daily)</td>
+                                    <td style="font-weight: 600;">BD (Twice Daily)</td>
+                                    <td><span class="badge badge-success">Signed & Locked</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 4: EXPORT CENTER -->
+            <section id="view-export" class="dashboard-view">
+                <h2>CTRI & CDISC/FHIR Export Center</h2>
+                
+                <div class="export-grid">
+                    <div class="export-card">
+                        <i class="fa-solid fa-file-invoice export-icon"></i>
+                        <h3>Official CTRI Periodic Safety Update Report (PSUR)</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Formatted to meet exact CTRI schema requirements.</p>
+                        <button class="btn-primary" style="width: 100%; justify-content: center;" onclick="openModal('ctri-modal')">Generate CTRI Form 24</button>
+                    </div>
+                    <div class="export-card">
+                        <i class="fa-solid fa-laptop-medical export-icon"></i>
+                        <h3>CDISC ODM / HL7 FHIR Interoperability Bundle</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Standardized clinical data for cross-platform EHR.</p>
+                        <button class="btn-outline" style="width: 100%; justify-content: center;" onclick="openModal('ctri-modal')">Export Medical JSON (FHIR)</button>
+                    </div>
+                    <div class="export-card">
+                        <i class="fa-solid fa-file-signature export-icon"></i>
+                        <h3>GCP Complete Trial Master File (TMF) Audit Summary</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Full PDF ledger with cryptographic sign-offs.</p>
+                        <button class="btn-outline" style="width: 100%; justify-content: center;" onclick="openModal('ctri-modal')">Download Audit Certificate (PDF)</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            <h3>Historical Export Log</h3>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Export Date (IST)</th>
+                                    <th>Report Type</th>
+                                    <th>Generated By</th>
+                                    <th>File Size</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-muted" style="font-family: monospace;">2026-09-01 14:00:00</td>
+                                    <td>CTRI Form 24 (August)</td>
+                                    <td>Dr. P. K. Nambiar</td>
+                                    <td>2.4 MB</td>
+                                    <td><a href="#" style="color: var(--primary-accent); font-size: 13px; font-weight: 600;"><i class="fa-solid fa-download"></i> Re-download</a></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted" style="font-family: monospace;">2026-08-01 14:15:30</td>
+                                    <td>CTRI Form 24 (July)</td>
+                                    <td>Dr. P. K. Nambiar</td>
+                                    <td>2.1 MB</td>
+                                    <td><a href="#" style="color: var(--primary-accent); font-size: 13px; font-weight: 600;"><i class="fa-solid fa-download"></i> Re-download</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+        </div>
+    </main>
+
+    <!-- MODALS -->
+
+    <!-- CTRI Export Progress Modal -->
+    <div id="ctri-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Generating Export Package</h3>
+                <button class="close-btn" onclick="closeModal('ctri-modal')">&times;</button>
+            </div>
+            <div class="modal-body" id="ctri-modal-body">
+                <div class="progress-wrapper">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="export-progress"></div>
+                    </div>
+                    <div class="progress-status" id="export-status">Initializing...</div>
+                </div>
+            </div>
+            <div class="modal-footer" id="ctri-modal-footer" style="display: none;">
+                <button class="btn-outline" onclick="closeModal('ctri-modal')">Close</button>
+                <button class="btn-primary" style="background: var(--success-green); border-color: var(--success-green);" onclick="downloadReport()">Download File</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Detail Inspector Modal -->
+    <div id="audit-detail-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>GCP Transaction Detail Inspector</h3>
+                <button class="close-btn" onclick="closeModal('audit-detail-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #F8FAFC; padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); margin-bottom: 20px;">
+                    <div style="font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 4px;" id="ad-tx">#TX-0000</div>
+                    <div style="font-size: 13px; color: var(--text-muted);"><i class="fa-solid fa-shield-check" style="color: var(--success-green);"></i> Verified Cryptographic Entry</div>
+                </div>
+                
+                <div class="inspector-row">
+                    <div class="inspector-label">User Role / ID</div>
+                    <div class="inspector-value" id="ad-user">--</div>
+                </div>
+                <div class="inspector-row">
+                    <div class="inspector-label">Action Performed</div>
+                    <div class="inspector-value" id="ad-action">--</div>
+                </div>
+                <div class="inspector-row">
+                    <div class="inspector-label">Data Change</div>
+                    <div class="inspector-value">
+                        <span style="color: var(--text-muted); text-decoration: line-through;" id="ad-old">--</span> &rarr; 
+                        <span style="font-weight: 700;" id="ad-new">--</span>
+                    </div>
+                </div>
+                <div class="inspector-row">
+                    <div class="inspector-label">SHA-256 Hash Signature</div>
+                    <div class="inspector-value" style="font-size: 11px; color: var(--primary-accent);">8f2a991b3... (verified)</div>
+                </div>
+                <div class="inspector-row">
+                    <div class="inspector-label">Client IP Address</div>
+                    <div class="inspector-value">192.168.1.105 (Internal Network)</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="closeModal('audit-detail-modal')">Close Inspector</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // SPA View Switching
+        function switchView(viewId, navElement) {
+            // Hide all views
+            document.querySelectorAll('.dashboard-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            // Update nav active state
+            if (navElement) {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+                navElement.classList.add('active');
+            } else {
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                    if(link.getAttribute('onclick').includes(viewId)) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+            // Show requested view
+            document.getElementById(viewId).classList.add('active');
+        }
+
+        // Modal Logic
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            
+            // If it's the CTRI export modal, trigger the simulation
+            if (id === 'ctri-modal') {
+                simulateExport();
+            }
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        
+        // Close on outside click
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                event.target.classList.remove('active');
+            }
+        }
+
+        // Audit Detail Inspector
+        function openAuditDetail(tx, user, action, oldVal, newVal, status) {
+            document.getElementById('ad-tx').textContent = '#' + tx;
+            document.getElementById('ad-user').textContent = user;
+            document.getElementById('ad-action').textContent = action;
+            document.getElementById('ad-old').textContent = oldVal;
+            document.getElementById('ad-new').textContent = newVal;
+            openModal('audit-detail-modal');
+        }
+
+        // Export Simulation
+        function simulateExport() {
+            const bar = document.getElementById('export-progress');
+            const status = document.getElementById('export-status');
+            const footer = document.getElementById('ctri-modal-footer');
+            
+            // Reset
+            bar.style.width = '0%';
+            footer.style.display = 'none';
+            status.innerHTML = 'Querying PostgreSQL Trial Database...';
+            status.style.color = 'var(--text-muted)';
+            
+            setTimeout(() => {
+                bar.style.width = '40%';
+                status.innerHTML = 'Validating SHA-256 cryptographic hashes...';
+            }, 600);
+            
+            setTimeout(() => {
+                bar.style.width = '80%';
+                status.innerHTML = 'Formatting into CTRI / CDISC XML-JSON schema...';
+            }, 1200);
+            
+            setTimeout(() => {
+                bar.style.width = '100%';
+                status.innerHTML = '✓ Export Package Ready';
+                status.style.color = 'var(--success-green)';
+                status.style.fontWeight = '700';
+                footer.style.display = 'flex';
+            }, 1800);
+        }
+
+        // Download Action
+        function downloadReport() {
+            closeModal('ctri-modal');
+            showToast('Report downloaded successfully!');
+        }
+
+        // Toast Notification
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <i class="fa-solid fa-circle-check toast-icon"></i>
+                <div class="toast-text">${message}</div>
+            `;
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
